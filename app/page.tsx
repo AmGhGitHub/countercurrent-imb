@@ -1,69 +1,213 @@
-import Image from "next/image";
+"use client";
+
+import { PressureChart } from "@/components/charts/pressure-charts";
+import { PropertyCharts } from "@/components/charts/property-charts";
+import { RecoveryChart } from "@/components/charts/recovery-chart";
+import { SaturationChart } from "@/components/charts/saturation-chart";
+import { SimulationForm } from "@/components/simulation-form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    computeProperties,
+    runSimulation,
+    type PropertiesResponse,
+    type SimulationRequest,
+    type SimulationResponse,
+} from "@/lib/api";
+import { useCallback, useState } from "react";
 
 export default function Home() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [simData, setSimData] = useState<SimulationResponse | null>(null);
+  const [propData, setPropData] = useState<PropertiesResponse | null>(null);
+  const [activeTab, setActiveTab] = useState(0);
+
+  const handleParamsChange = useCallback(async (params: SimulationRequest) => {
+    try {
+      const props = await computeProperties(params);
+      setPropData(props);
+    } catch {
+      // silently ignore property fetch errors
+    }
+  }, []);
+
+  const handleSubmit = useCallback(async (params: SimulationRequest) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [sim, props] = await Promise.all([
+        runSimulation(params),
+        computeProperties(params),
+      ]);
+      setSimData(sim);
+      setPropData(props);
+      setActiveTab(1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-2xl font-bold tracking-tight">
+            Countercurrent Imbibition Simulator
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-sm text-muted-foreground mt-1">
+            Pooladi-Darvish & Firoozabadi, SPE Journal (2000) -- 1D nonlinear diffusion model
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+      </header>
+
+      <main className="container mx-auto px-4 py-6">
+        <Tabs value={activeTab} onValueChange={(v) => {
+          const idx = typeof v === "number" ? v : Number(v);
+          if (!isNaN(idx)) setActiveTab(idx);
+        }}>
+          <TabsList className="mb-6">
+            <TabsTrigger value={0}>Setup</TabsTrigger>
+            <TabsTrigger value={1}>Results</TabsTrigger>
+          </TabsList>
+
+          {/* ── Setup tab ─────────────────────────────────────────── */}
+          <TabsContent value={0} className="space-y-6">
+            <SimulationForm
+              onSubmit={handleSubmit}
+              onParamsChange={handleParamsChange}
+              loading={loading}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+            {error && (
+              <Card className="border-destructive">
+                <CardContent className="py-4 text-destructive text-sm">{error}</CardContent>
+              </Card>
+            )}
+
+            {/* Property charts (live on Setup tab) */}
+            {propData && (
+              <>
+                <Separator />
+                <h2 className="text-lg font-semibold">Rock & Fluid Properties</h2>
+                <PropertyCharts data={propData} />
+              </>
+            )}
+          </TabsContent>
+
+          {/* ── Results tab ───────────────────────────────────────── */}
+          <TabsContent value={1} className="space-y-6">
+            {!simData ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  Adjust parameters on the Setup tab and click{" "}
+                  <span className="font-medium text-foreground">Run Simulation</span>{" "}
+                  to see results here.
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Summary stats */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                      <StatCard
+                        label="Front at 1 day"
+                        value={
+                          simData.summary.front_position_1d_cm != null
+                            ? `${simData.summary.front_position_1d_cm.toFixed(2)} cm`
+                            : "beyond L"
+                        }
+                      />
+                      <StatCard
+                        label="Oil pressure (behind front)"
+                        value={`${simData.summary.oil_pressure_behind_front_psi.toFixed(2)} psi`}
+                      />
+                      <StatCard
+                        label="Water pressure at Si"
+                        value={`${simData.summary.water_pressure_at_Si_psi.toFixed(2)} psi`}
+                      />
+                      <StatCard
+                        label="Half-recovery time"
+                        value={
+                          simData.summary.half_recovery_days != null
+                            ? `${simData.summary.half_recovery_days.toFixed(1)} days`
+                            : "> tmax"
+                        }
+                      />
+                      <StatCard
+                        label="Mass balance error"
+                        value={simData.summary.mass_balance_error.toExponential(2)}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Separator />
+
+                {/* Saturation profiles (full width) */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <SaturationChart
+                      numerical={simData.saturation_profiles}
+                      analytical={simData.analytical_profiles}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Pressure profiles (side by side) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <PressureChart
+                        profiles={simData.oil_pressure_profiles}
+                        title="Oil Pressure Profiles"
+                        yAxisName="Oil pressure (psi)"
+                      />
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <PressureChart
+                        profiles={simData.water_pressure_profiles}
+                        title="Water Pressure Profiles"
+                        yAxisName="Water pressure (psi)"
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Recovery curve */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <RecoveryChart
+                        numerical={simData.recovery_curve}
+                        analytical={simData.analytical_recovery}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-muted-foreground text-xs">{label}</p>
+      <p className="font-semibold font-mono mt-0.5">{value}</p>
     </div>
   );
 }
