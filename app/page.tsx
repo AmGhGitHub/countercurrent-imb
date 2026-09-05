@@ -1,21 +1,26 @@
 "use client";
 
-import { PressureChart } from "@/components/charts/pressure-charts";
+import { PressureAnimationChart } from "@/components/charts/pressure-animation-chart";
 import { PropertyCharts } from "@/components/charts/property-charts";
-import { RecoveryChart } from "@/components/charts/recovery-chart";
-import { SaturationChart } from "@/components/charts/saturation-chart";
+import { RecoveryAnimationChart } from "@/components/charts/recovery-animation-chart";
+import { SaturationAnimationChart } from "@/components/charts/saturation-animation-chart";
 import { SimulationForm } from "@/components/simulation-form";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-    computeProperties,
-    runSimulation,
-    type PropertiesResponse,
-    type SimulationRequest,
-    type SimulationResponse,
+  computeProperties,
+  runSimulation,
+  type PropertiesResponse,
+  type SimulationRequest,
+  type SimulationResponse,
 } from "@/lib/api";
-import { useCallback, useState } from "react";
+import { Pause, Play } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+
+const FPS = 12;
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
@@ -23,6 +28,27 @@ export default function Home() {
   const [simData, setSimData] = useState<SimulationResponse | null>(null);
   const [propData, setPropData] = useState<PropertiesResponse | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [frame, setFrame] = useState(0);
+  const [playing, setPlaying] = useState(false);
+
+  const nFrames = simData ? simData.saturation_map.times_days.length : 0;
+  const currentTime =
+    simData?.saturation_map.times_days[Math.min(frame, Math.max(nFrames - 1, 0))] ?? 0;
+
+  // restart animation when a new simulation arrives
+  useEffect(() => {
+    if (simData) {
+      setFrame(0);
+      setPlaying(true);
+    }
+  }, [simData]);
+
+  // shared playback loop
+  useEffect(() => {
+    if (!playing || !simData || nFrames === 0) return;
+    const id = setInterval(() => setFrame((f) => (f + 1) % nFrames), 1000 / FPS);
+    return () => clearInterval(id);
+  }, [playing, simData, nFrames]);
 
   const handleParamsChange = useCallback(async (params: SimulationRequest) => {
     try {
@@ -151,49 +177,61 @@ export default function Home() {
 
                 <Separator />
 
-                {/* Saturation profiles (full width) */}
+                {/* Shared animation controls */}
                 <Card>
-                  <CardContent className="pt-6">
-                    <SaturationChart
-                      numerical={simData.saturation_profiles}
-                      analytical={simData.analytical_profiles}
-                    />
+                  <CardContent className="py-3">
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setPlaying((p) => !p)}
+                        aria-label={playing ? "Pause" : "Play"}
+                      >
+                        {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                      </Button>
+                      <Slider
+                        min={0}
+                        max={Math.max(nFrames - 1, 1)}
+                        step={1}
+                        value={[Math.min(frame, Math.max(nFrames - 1, 0))]}
+                        onValueChange={(next) => {
+                          const v = Array.isArray(next) ? next[0] : next;
+                          if (v != null) setFrame(v);
+                        }}
+                        className="flex-1"
+                      />
+                      <span className="w-24 text-right text-sm font-mono tabular-nums text-muted-foreground">
+                        t = {currentTime.toFixed(2)} d
+                      </span>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* Pressure profiles (side by side) */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Card>
-                    <CardContent className="pt-6">
-                      <PressureChart
-                        profiles={simData.oil_pressure_profiles}
-                        title="Oil Pressure Profiles"
-                        yAxisName="Oil pressure (psi)"
-                      />
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-6">
-                      <PressureChart
-                        profiles={simData.water_pressure_profiles}
-                        title="Water Pressure Profiles"
-                        yAxisName="Water pressure (psi)"
-                      />
-                    </CardContent>
-                  </Card>
-                </div>
+                {/* Saturation timelapse: profile + colored core (full width) */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <SaturationAnimationChart map={simData.saturation_map} frame={frame} />
+                  </CardContent>
+                </Card>
 
-                {/* Recovery curve */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Card>
-                    <CardContent className="pt-6">
-                      <RecoveryChart
-                        numerical={simData.recovery_curve}
-                        analytical={simData.analytical_recovery}
-                      />
-                    </CardContent>
-                  </Card>
-                </div>
+                {/* Oil + water pressure timelapse (full width) */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <PressureAnimationChart map={simData.pressure_map} frame={frame} />
+                  </CardContent>
+                </Card>
+
+                {/* Recovery factor timelapse */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <RecoveryAnimationChart
+                      numerical={simData.recovery_curve}
+                      analytical={simData.analytical_recovery}
+                      frameTimes={simData.saturation_map.times_days}
+                      frame={frame}
+                    />
+                  </CardContent>
+                </Card>
               </>
             )}
           </TabsContent>

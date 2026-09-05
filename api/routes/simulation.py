@@ -19,9 +19,11 @@ from api.schemas.simulation import (
     CurveData,
     DiffusionCoefficientData,
     FractionalFlowData,
+    PressureMap,
     ProfileSeries,
     PropertiesResponse,
     RelativePermeabilityData,
+    SaturationMap,
     SimulationRequest,
     SimulationResponse,
     SummaryStats,
@@ -137,11 +139,33 @@ def simulate(req: SimulationRequest):
     R = diff["recovery"]
     t_half = float(np.interp(0.5, R, diff["t"]) / DAY) if R[-1] > 0.5 else None
 
+    # Space-time saturation map: frames evenly spaced in sqrt(t).  The
+    # spatial axis is downsampled so the payload stays bounded for large nx.
+    stride = max(1, -(-req.nx // 300))
+    sat_map = SaturationMap(
+        times_days=(diff["frames_t"] / DAY).tolist(),
+        x_m=diff["x"][::stride].tolist(),
+        frames=diff["frames_S"][:, ::stride].tolist(),
+    )
+
+    # Pressure frames: derived from the saturation frames (countercurrent flow
+    # makes oil pressure a unique function of saturation, Eq. 7).
+    po_frames = props.oil_pressure_of_S(diff["frames_S"]) * PA_TO_PSI
+    pw_frames = (props.oil_pressure_of_S(diff["frames_S"]) - props.Pc(diff["frames_S"])) * PA_TO_PSI
+    pressure_map = PressureMap(
+        times_days=sat_map.times_days,
+        x_m=sat_map.x_m,
+        oil_pressure_psi=po_frames[:, ::stride].tolist(),
+        water_pressure_psi=pw_frames[:, ::stride].tolist(),
+    )
+
     return SimulationResponse(
         saturation_profiles=sat_profiles,
         analytical_profiles=ana_profiles,
         oil_pressure_profiles=oil_p_profiles,
         water_pressure_profiles=wat_p_profiles,
+        saturation_map=sat_map,
+        pressure_map=pressure_map,
         recovery_curve=CurveData(x=td_num, y=R_num),
         analytical_recovery=CurveData(x=t_ana.tolist(), y=R_ana.tolist()),
         summary=SummaryStats(

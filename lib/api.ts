@@ -30,6 +30,19 @@ export interface CurveData {
   y: number[];
 }
 
+export interface SaturationMap {
+  times_days: number[];
+  x_m: number[];
+  frames: number[][];
+}
+
+export interface PressureMap {
+  times_days: number[];
+  x_m: number[];
+  oil_pressure_psi: number[][];
+  water_pressure_psi: number[][];
+}
+
 export interface SummaryStats {
   front_position_1d_cm: number | null;
   oil_pressure_behind_front_psi: number;
@@ -43,6 +56,8 @@ export interface SimulationResponse {
   analytical_profiles: ProfileSeries[];
   oil_pressure_profiles: ProfileSeries[];
   water_pressure_profiles: ProfileSeries[];
+  saturation_map: SaturationMap;
+  pressure_map: PressureMap;
   recovery_curve: CurveData;
   analytical_recovery: CurveData;
   summary: SummaryStats;

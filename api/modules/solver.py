@@ -195,7 +195,16 @@ class DiffusionSolver:
             S = np.clip(S + step * dS, 1e-8, 1.0)
         return S, itmax, False
 
-    def run(self, report_times, dt0=1.0, dt_max=None, growth=1.25, verbose=False):
+    def run(self, report_times, dt0=1.0, dt_max=None, growth=1.25, verbose=False,
+            n_frames=150):
+        """
+        March to max(report_times) with adaptive time steps.
+
+        Returns the saturation profiles at the requested times, the recovery
+        history, and `n_frames` intermediate profiles (spaced evenly in
+        sqrt(t), which is how this problem actually evolves) for the
+        space-time saturation map.
+        """
         p = self.p
         report_times = np.atleast_1d(np.sort(np.asarray(report_times, float)))
         tmax = report_times[-1]
@@ -206,6 +215,10 @@ class DiffusionSolver:
         t, dt, Q = 0.0, dt0, 0.0
         snaps, hist_t, hist_R = {}, [0.0], [0.0]
         k_rep = 0
+        # frame times, evenly spaced in sqrt(t) so the early front is resolved
+        frame_times = np.linspace(0.0, np.sqrt(tmax), n_frames + 1)[1:] ** 2
+        k_frame = 0
+        frames_t, frames_S = [0.0], [S.copy()]
 
         def recovery(S):
             return np.sum((S - S0) * self.dx) / ((1.0 - p.Si) * p.L)
@@ -220,6 +233,10 @@ class DiffusionSolver:
                 continue
             Q += self._face_flux(Snew)[0] * dt
             S, t = Snew, t + dt
+            while k_frame < len(frame_times) and t >= frame_times[k_frame]:
+                frames_t.append(t)
+                frames_S.append(S.copy())
+                k_frame += 1
             hist_t.append(t)
             hist_R.append(recovery(S))
             if k_rep < len(report_times) and abs(t - report_times[k_rep]) < 1e-9:
@@ -229,12 +246,19 @@ class DiffusionSolver:
                 k_rep += 1
             dt *= growth if nit <= 4 else 1.0
 
+        # rounding can leave the last frame (at t = tmax) uncaptured
+        while k_frame < len(frame_times):
+            frames_t.append(t)
+            frames_S.append(S.copy())
+            k_frame += 1
+
         u = self._face_flux(S)
         stored = p.phi_eff * np.sum((S - S0) * self.dx)
         mb_err = (Q - stored) / max(Q, 1e-30)
         return dict(x=self.x, snapshots=snaps, t=np.array(hist_t),
                     recovery=np.array(hist_R), S_final=S, flux_final=u,
-                    influx=Q, mass_balance_error=mb_err)
+                    influx=Q, mass_balance_error=mb_err,
+                    frames_t=np.array(frames_t), frames_S=np.array(frames_S))
 
 
 # ---------------------------------------------------------------------------

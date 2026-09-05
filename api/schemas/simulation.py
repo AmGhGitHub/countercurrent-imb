@@ -41,6 +41,23 @@ class CurveData(BaseModel):
     y: list[float]
 
 
+class SaturationMap(BaseModel):
+    """Space-time saturation frames for the grid/heatmap display."""
+
+    times_days: list[float]          # frame times, t = 0 first
+    x_m: list[float]                 # block-centre positions
+    frames: list[list[float]]        # values[j][i] = S at time j, position i
+
+
+class PressureMap(BaseModel):
+    """Space-time oil/water pressure frames for the timelapse display."""
+
+    times_days: list[float]          # frame times, t = 0 first
+    x_m: list[float]                 # block-centre positions
+    oil_pressure_psi: list[list[float]]
+    water_pressure_psi: list[list[float]]
+
+
 class SummaryStats(BaseModel):
     front_position_1d_cm: float | None = None
     oil_pressure_behind_front_psi: float
@@ -57,6 +74,8 @@ class SimulationResponse(BaseModel):
     analytical_profiles: list[ProfileSeries]
     oil_pressure_profiles: list[ProfileSeries]
     water_pressure_profiles: list[ProfileSeries]
+    saturation_map: SaturationMap
+    pressure_map: PressureMap
     recovery_curve: CurveData
     analytical_recovery: CurveData
     summary: SummaryStats
