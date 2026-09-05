@@ -1,7 +1,7 @@
 "use client";
 
 import type { PressureMap } from "@/lib/api";
-import { fmtUpTo4Decimals } from "@/lib/utils";
+import { fmtUpTo4Decimals, niceAxisRange } from "@/lib/utils";
 import ReactEChartsCore from "echarts-for-react/lib/core";
 import { LineChart } from "echarts/charts";
 import {
@@ -44,21 +44,21 @@ export function PressureAnimationChart({ map, frame }: Props) {
   const oilData = useMemo(() => map.x_m.map((x, i) => [x, po[i]]), [po, map.x_m]);
   const waterData = useMemo(() => map.x_m.map((x, i) => [x, pw[i]]), [pw, map.x_m]);
 
-  // fixed, rounded y-axis ranges so the scale doesn't jump during playback
-  const oilMin = useMemo(
-    () => Math.floor(Math.min(...map.oil_pressure_psi.flat()) * 10) / 10,
+  // fixed, evenly-spaced y-axis ranges so the scale doesn't jump during playback
+  const oilAxis = useMemo(
+    () =>
+      niceAxisRange(
+        Math.min(...map.oil_pressure_psi.flat()),
+        Math.max(...map.oil_pressure_psi.flat())
+      ),
     [map.oil_pressure_psi]
   );
-  const oilMax = useMemo(
-    () => Math.ceil(Math.max(...map.oil_pressure_psi.flat()) * 10) / 10,
-    [map.oil_pressure_psi]
-  );
-  const waterMin = useMemo(
-    () => Math.floor(Math.min(...map.water_pressure_psi.flat()) * 10) / 10,
-    [map.water_pressure_psi]
-  );
-  const waterMax = useMemo(
-    () => Math.ceil(Math.max(...map.water_pressure_psi.flat()) * 10) / 10,
+  const waterAxis = useMemo(
+    () =>
+      niceAxisRange(
+        Math.min(...map.water_pressure_psi.flat()),
+        Math.max(...map.water_pressure_psi.flat())
+      ),
     [map.water_pressure_psi]
   );
 
@@ -114,15 +114,17 @@ export function PressureAnimationChart({ map, frame }: Props) {
               gridIndex: 0,
               type: "value",
               name: "Oil pressure (psi)",
-              min: oilMin,
-              max: oilMax,
+              min: oilAxis.min,
+              max: oilAxis.max,
+              interval: oilAxis.interval,
             },
             {
               gridIndex: 1,
               type: "value",
               name: "Water pressure (psi)",
-              min: waterMin,
-              max: waterMax,
+              min: waterAxis.min,
+              max: waterAxis.max,
+              interval: waterAxis.interval,
             },
           ],
           series: [

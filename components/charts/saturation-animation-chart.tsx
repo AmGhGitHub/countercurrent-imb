@@ -1,7 +1,7 @@
 "use client";
 
 import type { SaturationMap } from "@/lib/api";
-import { fmtUpTo4Decimals } from "@/lib/utils";
+import { fmtUpTo4Decimals, niceAxisRange } from "@/lib/utils";
 import ReactEChartsCore from "echarts-for-react/lib/core";
 import { HeatmapChart, LineChart } from "echarts/charts";
 import {
@@ -13,6 +13,7 @@ import {
 } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
+import { useMemo } from "react";
 
 echarts.use([
   LineChart,
@@ -54,6 +55,14 @@ export function SaturationAnimationChart({ map, frame }: Props) {
   // block-edge extents of the (uniform, possibly strided) grid
   const dx = map.x_m.length > 1 ? map.x_m[1] - map.x_m[0] : map.x_m[0];
 
+  // fixed, evenly-spaced y-axis range (clamped to the physical [0, 1]
+  // saturation bounds) so the scale doesn't jump during playback
+  const satAxis = useMemo(() => {
+    const all = map.frames.flat();
+    const { min, max, interval } = niceAxisRange(Math.min(...all), Math.max(...all));
+    return { min: Math.max(0, min), max: Math.min(1, max), interval };
+  }, [map.frames]);
+
   return (
     <div>
       <ReactEChartsCore
@@ -79,8 +88,8 @@ export function SaturationAnimationChart({ map, frame }: Props) {
             },
           },
           grid: [
-            { top: 48, left: 65, right: 90, height: 190 },
-            { top: 268, left: 65, right: 90, height: 55 },
+            { top: 195, left: 80, right: 30, height: 130 },
+            { top: 75, left: 80, right: 30, height: 90 },
           ],
           toolbox: {
             feature: { saveAsImage: { title: "Save" } },
@@ -93,17 +102,17 @@ export function SaturationAnimationChart({ map, frame }: Props) {
               type: "value",
               min: map.x_m[0] - dx / 2,
               max: map.x_m[map.x_m.length - 1] + dx / 2,
-              axisLabel: { show: false },
-              axisTick: { show: false },
+              name: "Distance from inlet (m)",
+              nameLocation: "center",
+              nameGap: 28,
+              axisLabel: { fontSize: 10, formatter: (v: number) => v.toFixed(3) },
             },
             {
               gridIndex: 1,
               type: "category",
               data: xLabels,
-              name: "Distance from inlet (m)",
-              nameLocation: "center",
-              nameGap: 28,
-              axisLabel: { hideOverlap: true, fontSize: 10 },
+              axisLabel: { show: false },
+              axisTick: { show: false },
             },
           ],
           yAxis: [
@@ -111,9 +120,11 @@ export function SaturationAnimationChart({ map, frame }: Props) {
               gridIndex: 0,
               type: "value",
               name: "Normalized water saturation",
-              min: 0,
-              max: 1.02,
-              interval: 0.2,
+              nameLocation: "middle",
+              nameGap: 45,
+              min: satAxis.min,
+              max: satAxis.max,
+              interval: satAxis.interval,
             },
             {
               gridIndex: 1,
@@ -128,10 +139,11 @@ export function SaturationAnimationChart({ map, frame }: Props) {
             min: 0,
             max: 1,
             seriesIndex: 1,
-            orient: "vertical",
-            right: 0,
-            top: "center",
-            itemHeight: 200,
+            orient: "horizontal",
+            left: "center",
+            top: 28,
+            itemWidth: 14,
+            itemHeight: 220,
             inRange: { color: SATURATION_COLORS },
             text: ["Sw = 1", "Sw = 0"],
           },
