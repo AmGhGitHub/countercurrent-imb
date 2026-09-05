@@ -1,6 +1,7 @@
 "use client";
 
 import type { CurveData } from "@/lib/api";
+import { fmtUpTo4Decimals } from "@/lib/utils";
 import ReactEChartsCore from "echarts-for-react/lib/core";
 import { LineChart, ScatterChart } from "echarts/charts";
 import {
@@ -76,11 +77,11 @@ export function RecoveryAnimationChart({ numerical, analytical, frameTimes, fram
           formatter: (ps: { value: number[]; seriesName: string }[] | { value: number[]; seriesName: string }) => {
             const p = Array.isArray(ps) ? ps[0] : ps;
             const [x, y] = p.value;
-            return `${p.seriesName}<br/>t = ${x.toFixed(2)} d<br/>R = ${y.toFixed(4)}`;
+            return `${p.seriesName}<br/>t = ${x.toFixed(2)} d<br/>R = ${fmtUpTo4Decimals(y)}`;
           },
         },
-        legend: { data: ["Analytical (M&S)", "Diffusion model"], top: 28, textStyle: { fontSize: 11 } },
-        grid: { top: 70, bottom: 40, left: 60, right: 30 },
+        legend: { data: ["Analytical (M&S)", "Diffusion model"], top: 46, textStyle: { fontSize: 11 } },
+        grid: { top: 85, bottom: 40, left: 60, right: 30 },
         toolbox: {
           feature: { saveAsImage: { title: "Save" } },
           right: 10,

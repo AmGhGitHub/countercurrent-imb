@@ -1,6 +1,7 @@
 "use client";
 
 import type { PressureMap } from "@/lib/api";
+import { fmtUpTo4Decimals } from "@/lib/utils";
 import ReactEChartsCore from "echarts-for-react/lib/core";
 import { LineChart } from "echarts/charts";
 import {
@@ -76,7 +77,7 @@ export function PressureAnimationChart({ map, frame }: Props) {
             formatter: (ps: { value: number[]; seriesName: string }[] | { value: number[]; seriesName: string }) => {
               const p = Array.isArray(ps) ? ps[0] : ps;
               const [x, v] = p.value;
-              return `${p.seriesName}<br/>x = ${(x * 100).toFixed(2)} cm<br/>p = ${v.toFixed(2)} psi`;
+              return `${p.seriesName}<br/>x = ${x.toFixed(3)} m<br/>p = ${fmtUpTo4Decimals(v)} psi`;
             },
           },
           grid: [

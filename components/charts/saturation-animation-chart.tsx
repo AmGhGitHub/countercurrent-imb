@@ -1,6 +1,7 @@
 "use client";
 
 import type { SaturationMap } from "@/lib/api";
+import { fmtUpTo4Decimals } from "@/lib/utils";
 import ReactEChartsCore from "echarts-for-react/lib/core";
 import { HeatmapChart, LineChart } from "echarts/charts";
 import {
@@ -46,7 +47,7 @@ export function SaturationAnimationChart({ map, frame }: Props) {
   const t = map.times_days[idx];
   const S = map.frames[idx];
 
-  const xLabels = map.x_m.map((x) => (x * 100).toFixed(1)); // cm
+  const xLabels = map.x_m.map((x) => x.toFixed(3)); // m
   const lineData = map.x_m.map((x, i) => [x, S[i]]);
   const stripData: [number, number, number][] = S.map((v, i) => [i, 0, v]);
 
@@ -71,10 +72,10 @@ export function SaturationAnimationChart({ map, frame }: Props) {
               const p = Array.isArray(ps) ? ps[0] : ps;
               if (p.seriesType === "heatmap") {
                 const [i, , v] = p.value;
-                return `x = ${xLabels[i]} cm<br/>Sw = ${v.toFixed(3)}`;
+                return `x = ${xLabels[i]} m<br/>Sw = ${fmtUpTo4Decimals(v)}`;
               }
               const [x, v] = p.value;
-              return `x = ${(x * 100).toFixed(2)} cm<br/>Sw = ${v.toFixed(3)}`;
+              return `x = ${x.toFixed(3)} m<br/>Sw = ${fmtUpTo4Decimals(v)}`;
             },
           },
           grid: [
