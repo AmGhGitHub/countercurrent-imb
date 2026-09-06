@@ -18,7 +18,7 @@ class SimulationRequest(BaseModel):
     krw0: float = Field(0.20, gt=0, le=1, description="Water rel-perm end point")
     no: float = Field(4.0, ge=1, description="Oil rel-perm exponent")
     nw: float = Field(4.0, ge=1, description="Water rel-perm exponent")
-    B: float = Field(1.45, gt=0, description="Capillary pressure constant, psi")
+    B: float = Field(10.0, gt=0, description="Capillary pressure constant, kPa")
     Si: float = Field(0.001, gt=0, lt=1, description="Initial normalised water saturation")
     Swi: float = Field(0.0, ge=0, lt=1, description="Irreducible water saturation")
     Sor: float = Field(0.0, ge=0, lt=1, description="Residual oil saturation")
@@ -54,14 +54,14 @@ class PressureMap(BaseModel):
 
     times_days: list[float]          # frame times, t = 0 first
     x_m: list[float]                 # block-centre positions
-    oil_pressure_psi: list[list[float]]
-    water_pressure_psi: list[list[float]]
+    oil_pressure_kPa: list[list[float]]
+    water_pressure_kPa: list[list[float]]
 
 
 class SummaryStats(BaseModel):
     front_position_1d_cm: float | None = None
-    oil_pressure_behind_front_psi: float
-    water_pressure_at_Si_psi: float
+    oil_pressure_behind_front_kPa: float
+    water_pressure_at_Si_kPa: float
     half_recovery_days: float | None = None
     mass_balance_error: float
 
@@ -97,8 +97,8 @@ class FractionalFlowData(BaseModel):
 
 class CapillaryPressureData(BaseModel):
     S: list[float]
-    Pc_psi: list[float]
-    dPc_dSw_psi: list[float]
+    Pc_kPa: list[float]
+    dPc_dSw_kPa: list[float]
 
 
 class DiffusionCoefficientData(BaseModel):

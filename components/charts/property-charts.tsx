@@ -113,29 +113,29 @@ export function PropertyCharts({ data }: Props) {
       />
 
       <XYLineChart
-        title="Fractional Flow (Eq. 3)"
+        title="Fractional Flow Curve"
         xName="Normalized Sw"
         yName="f(Sw)"
-        series={[{ name: "fw", x: ff.S, y: ff.fw, color: "#106db9ff" }]}
+        series={[{ name: "fw", x: ff.S, y: ff.fw, color: "#2d3841ff" }]}
       />
 
       <XYLineChart
-        title="Imbibition capillary pressure Pc = -B ln S, Eq. 20"
+        title="Imbibition capillary pressure Curve"
         xName="Normalized Sw"
-        yName="Pc, psi"
-        series={[{ name: "Pc", x: pc.S, y: pc.Pc_psi, color: "#b3a102ff" }]}
+        yName="Pc, kPa"
+        series={[{ name: "Pc", x: pc.S, y: pc.Pc_kPa, color: "#b3a102ff" }]}
       />
 
       <XYLineChart
         title="Slope -dPc/dSw = B/S"
         xName="Normalized Sw"
-        yName="-dPc/dSw, psi"
+        yName="-dPc/dSw, kPa"
         yScale="log"
         series={[
           {
             name: "-dPc/dSw",
             x: pc.S,
-            y: pc.dPc_dSw_psi.map((v) => -v),
+            y: pc.dPc_dSw_kPa.map((v) => -v),
             color: "#b32e02ff",
           },
         ]}

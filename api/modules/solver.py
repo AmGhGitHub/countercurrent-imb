@@ -23,8 +23,8 @@ from scipy.linalg import solve_banded
 # ---------------------------------------------------------------------------
 MD_TO_M2 = 9.869233e-16       # 1 md  -> m^2
 CP_TO_PAS = 1.0e-3            # 1 cp  -> Pa.s
-PSI_TO_PA = 6894.757          # 1 psi -> Pa
-PA_TO_PSI = 1.0 / PSI_TO_PA
+KPA_TO_PA = 1000.0            # 1 kPa -> Pa
+PA_TO_KPA = 1.0 / KPA_TO_PA
 DAY = 86400.0
 HOUR = 3600.0
 
@@ -45,7 +45,7 @@ class Properties:
     krw0: float = 0.20                    # water rel-perm end point
     no: float = 4.0                       # oil rel-perm exponent
     nw: float = 4.0                       # water rel-perm exponent
-    B: float = 1.45 * PSI_TO_PA           # capillary pressure constant, Pa
+    B: float = 10.0 * KPA_TO_PA           # capillary pressure constant, Pa (~1.45 psi, Table 1)
     Si: float = 0.001                     # normalised initial water saturation
     Swi: float = 0.0                      # irreducible water saturation
     Sor: float = 0.0                      # residual oil saturation

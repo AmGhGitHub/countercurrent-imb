@@ -48,7 +48,7 @@ const PARAM_GROUPS: { title: string; params: ParamDef[] }[] = [
   {
     title: "Capillary Pressure",
     params: [
-      { key: "B", label: "Constant B", unit: "psi", min: 0.1, max: 50, step: 0.1, default: 1.45 },
+      { key: "B", label: "Constant B", unit: "kPa", min: 0.5, max: 350, step: 0.5, default: 10.0 },
     ],
   },
   {

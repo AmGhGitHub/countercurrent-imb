@@ -153,11 +153,11 @@ export default function Home() {
                       />
                       <StatCard
                         label="Oil pressure (behind front)"
-                        value={`${simData.summary.oil_pressure_behind_front_psi.toFixed(2)} psi`}
+                        value={`${simData.summary.oil_pressure_behind_front_kPa.toFixed(2)} kPa`}
                       />
                       <StatCard
                         label="Water pressure at Si"
-                        value={`${simData.summary.water_pressure_at_Si_psi.toFixed(2)} psi`}
+                        value={`${simData.summary.water_pressure_at_Si_kPa.toFixed(2)} kPa`}
                       />
                       <StatCard
                         label="Half-recovery time"

@@ -35,8 +35,8 @@ export function PressureAnimationChart({ map, frame }: Props) {
   const n = map.times_days.length;
   const idx = Math.min(frame, n - 1);
   const t = map.times_days[idx];
-  const po = map.oil_pressure_psi[idx];
-  const pw = map.water_pressure_psi[idx];
+  const po = map.oil_pressure_kPa[idx];
+  const pw = map.water_pressure_kPa[idx];
 
   const dx = map.x_m.length > 1 ? map.x_m[1] - map.x_m[0] : map.x_m[0];
   const L = map.x_m[map.x_m.length - 1] + dx / 2;
@@ -48,18 +48,18 @@ export function PressureAnimationChart({ map, frame }: Props) {
   const oilAxis = useMemo(
     () =>
       niceAxisRange(
-        Math.min(...map.oil_pressure_psi.flat()),
-        Math.max(...map.oil_pressure_psi.flat())
+        Math.min(...map.oil_pressure_kPa.flat()),
+        Math.max(...map.oil_pressure_kPa.flat())
       ),
-    [map.oil_pressure_psi]
+    [map.oil_pressure_kPa]
   );
   const waterAxis = useMemo(
     () =>
       niceAxisRange(
-        Math.min(...map.water_pressure_psi.flat()),
-        Math.max(...map.water_pressure_psi.flat())
+        Math.min(...map.water_pressure_kPa.flat()),
+        Math.max(...map.water_pressure_kPa.flat())
       ),
-    [map.water_pressure_psi]
+    [map.water_pressure_kPa]
   );
 
   return (
@@ -77,7 +77,7 @@ export function PressureAnimationChart({ map, frame }: Props) {
             formatter: (ps: { value: number[]; seriesName: string }[] | { value: number[]; seriesName: string }) => {
               const p = Array.isArray(ps) ? ps[0] : ps;
               const [x, v] = p.value;
-              return `${p.seriesName}<br/>x = ${x.toFixed(3)} m<br/>p = ${fmtUpTo4Decimals(v)} psi`;
+              return `${p.seriesName}<br/>x = ${x.toFixed(3)} m<br/>p = ${fmtUpTo4Decimals(v)} kPa`;
             },
           },
           grid: [
@@ -113,7 +113,7 @@ export function PressureAnimationChart({ map, frame }: Props) {
             {
               gridIndex: 0,
               type: "value",
-              name: "Oil pressure (psi)",
+              name: "Oil pressure (kPa)",
               min: oilAxis.min,
               max: oilAxis.max,
               interval: oilAxis.interval,
@@ -121,7 +121,7 @@ export function PressureAnimationChart({ map, frame }: Props) {
             {
               gridIndex: 1,
               type: "value",
-              name: "Water pressure (psi)",
+              name: "Water pressure (kPa)",
               min: waterAxis.min,
               max: waterAxis.max,
               interval: waterAxis.interval,

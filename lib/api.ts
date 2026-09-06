@@ -39,14 +39,14 @@ export interface SaturationMap {
 export interface PressureMap {
   times_days: number[];
   x_m: number[];
-  oil_pressure_psi: number[][];
-  water_pressure_psi: number[][];
+  oil_pressure_kPa: number[][];
+  water_pressure_kPa: number[][];
 }
 
 export interface SummaryStats {
   front_position_1d_cm: number | null;
-  oil_pressure_behind_front_psi: number;
-  water_pressure_at_Si_psi: number;
+  oil_pressure_behind_front_kPa: number;
+  water_pressure_at_Si_kPa: number;
   half_recovery_days: number | null;
   mass_balance_error: number;
 }
@@ -66,7 +66,7 @@ export interface SimulationResponse {
 export interface PropertiesResponse {
   relative_permeability: { S: number[]; kro: number[]; krw: number[] };
   fractional_flow: { S: number[]; fw: number[] };
-  capillary_pressure: { S: number[]; Pc_psi: number[]; dPc_dSw_psi: number[] };
+  capillary_pressure: { S: number[]; Pc_kPa: number[]; dPc_dSw_kPa: number[] };
   diffusion_coefficient: { S: number[]; D_cm2_s: number[] };
 }
 

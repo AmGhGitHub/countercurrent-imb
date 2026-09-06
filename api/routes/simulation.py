@@ -7,9 +7,9 @@ from api.modules.solver import (
     CP_TO_PAS,
     DAY,
     HOUR,
+    KPA_TO_PA,
     MD_TO_M2,
-    PA_TO_PSI,
-    PSI_TO_PA,
+    PA_TO_KPA,
     DiffusionSolver,
     McWhorterSunada,
     Properties,
@@ -48,7 +48,7 @@ def _build_props(req: SimulationRequest) -> Properties:
         krw0=req.krw0,
         no=req.no,
         nw=req.nw,
-        B=req.B * PSI_TO_PA,
+        B=req.B * KPA_TO_PA,
         Si=req.Si,
         Swi=req.Swi,
         Sor=req.Sor,
@@ -103,8 +103,8 @@ def simulate(req: SimulationRequest):
         ))
 
         # Pressures from the diffusion solution
-        po = props.oil_pressure_of_S(S) * PA_TO_PSI
-        pw = (props.oil_pressure_of_S(S) - props.Pc(S)) * PA_TO_PSI
+        po = props.oil_pressure_of_S(S) * PA_TO_KPA
+        pw = (props.oil_pressure_of_S(S) - props.Pc(S)) * PA_TO_KPA
         oil_p_profiles.append(ProfileSeries(
             time_days=td, time_label=label,
             x_m=x.tolist(), values=po.tolist(),
@@ -134,8 +134,8 @@ def simulate(req: SimulationRequest):
 
     # Summary
     front_1d = ms.front_position(DAY) * 100  # cm
-    po_behind = props.oil_pressure_of_S(props.Si) * PA_TO_PSI
-    pw_si = props.water_pressure_of_S(props.Si) * PA_TO_PSI
+    po_behind = props.oil_pressure_of_S(props.Si) * PA_TO_KPA
+    pw_si = props.water_pressure_of_S(props.Si) * PA_TO_KPA
     R = diff["recovery"]
     t_half = float(np.interp(0.5, R, diff["t"]) / DAY) if R[-1] > 0.5 else None
 
@@ -150,13 +150,13 @@ def simulate(req: SimulationRequest):
 
     # Pressure frames: derived from the saturation frames (countercurrent flow
     # makes oil pressure a unique function of saturation, Eq. 7).
-    po_frames = props.oil_pressure_of_S(diff["frames_S"]) * PA_TO_PSI
-    pw_frames = (props.oil_pressure_of_S(diff["frames_S"]) - props.Pc(diff["frames_S"])) * PA_TO_PSI
+    po_frames = props.oil_pressure_of_S(diff["frames_S"]) * PA_TO_KPA
+    pw_frames = (props.oil_pressure_of_S(diff["frames_S"]) - props.Pc(diff["frames_S"])) * PA_TO_KPA
     pressure_map = PressureMap(
         times_days=sat_map.times_days,
         x_m=sat_map.x_m,
-        oil_pressure_psi=po_frames[:, ::stride].tolist(),
-        water_pressure_psi=pw_frames[:, ::stride].tolist(),
+        oil_pressure_kPa=po_frames[:, ::stride].tolist(),
+        water_pressure_kPa=pw_frames[:, ::stride].tolist(),
     )
 
     return SimulationResponse(
@@ -170,8 +170,8 @@ def simulate(req: SimulationRequest):
         analytical_recovery=CurveData(x=t_ana.tolist(), y=R_ana.tolist()),
         summary=SummaryStats(
             front_position_1d_cm=front_1d if front_1d < props.L * 100 else None,
-            oil_pressure_behind_front_psi=po_behind,
-            water_pressure_at_Si_psi=pw_si,
+            oil_pressure_behind_front_kPa=po_behind,
+            water_pressure_at_Si_kPa=pw_si,
             half_recovery_days=t_half,
             mass_balance_error=diff["mass_balance_error"],
         ),
@@ -190,8 +190,8 @@ def compute_properties(req: SimulationRequest):
     kro = props.kro(S)
     krw = props.krw(S)
     fw = props.fw(S)
-    Pc = props.Pc(S) * PA_TO_PSI
-    dPc = props.dPc_dS(S) * PA_TO_PSI
+    Pc = props.Pc(S) * PA_TO_KPA
+    dPc = props.dPc_dS(S) * PA_TO_KPA
     D = props.D(S) * 1e4  # cm^2/s
 
     return PropertiesResponse(
@@ -202,7 +202,7 @@ def compute_properties(req: SimulationRequest):
             S=S.tolist(), fw=fw.tolist(),
         ),
         capillary_pressure=CapillaryPressureData(
-            S=S.tolist(), Pc_psi=Pc.tolist(), dPc_dSw_psi=dPc.tolist(),
+            S=S.tolist(), Pc_kPa=Pc.tolist(), dPc_dSw_kPa=dPc.tolist(),
         ),
         diffusion_coefficient=DiffusionCoefficientData(
             S=S.tolist(), D_cm2_s=D.tolist(),
